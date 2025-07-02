@@ -1,12 +1,9 @@
-# sharing_session_redis_app1
-trying to demo sharing redis as session data
-
 Overall Design
 This system consists of two separate ASP.NET Core Razor Pages applications:
 
-App1 (Parent Application): Runs on https://localhost:7038. It serves as the main application where a user logs in. It embeds App2 within an <iframe>. App1 is responsible for user authentication and storing shared session-related data into a Redis distributed cache.
+App1 (Parent Application): Runs on https://localhost:A. It serves as the main application where a user logs in. It embeds App2 within an <iframe>. App1 is responsible for user authentication and storing shared session-related data into a Redis distributed cache.
 
-App2 (Embedded Child Application): Runs on https://localhost:7053. It is embedded within App1's iframe. App2's role is to receive a session ID from App1, use that ID to fetch shared data from the same Redis distributed cache, and then display that data.
+App2 (Embedded Child Application): Runs on https://localhost:B. It is embedded within App1's iframe. App2's role is to receive a session ID from App1, use that ID to fetch shared data from the same Redis distributed cache, and then display that data.
 
 The core idea is to demonstrate secure cross-origin communication and shared state management between two distinct web applications using postMessage for session ID transfer and Redis for shared data persistence.
 
@@ -15,7 +12,7 @@ The session ID transfer from App1 to App2 is handled client-side using the windo
 
 App1's Role: After a successful login, App1's Index.cshtml (the frontend) retrieves the ASP.NET Core session ID (which is also the basis for the Redis key). Once App2's iframe signals it's "ready" (or upon App1's onload), App1 uses postMessage() to send this sessionId to the embedded App2 iframe.
 
-Security: App1 specifies App2's exact origin (https://localhost:7053) as the targetOrigin in postMessage() to prevent data leakage to unintended origins.
+Security: App1 specifies App2's exact origin (https://localhost:B) as the targetOrigin in postMessage() to prevent data leakage to unintended origins.
 
 App2's Role: App2's Index.cshtml (the frontend) has a window.addEventListener('message', ...) that listens for incoming messages.
 
@@ -101,7 +98,7 @@ Problem: Applications were defaulting to HTTP ports or using incorrect HTTPS por
 
 Fixes:
 
-Verified launchSettings.json in both App1 and App2 had correct HTTPS applicationUrl entries (https://localhost:7038 and https://localhost:7053 respectively).
+Verified launchSettings.json in both App1 and App2 had correct HTTPS applicationUrl entries (https://localhost:A and https://localhost:B respectively).
 
 Instructed to run applications using dotnet run --launch-profile https to explicitly use HTTPS.
 
@@ -128,10 +125,3 @@ Problem: App1's logs showed it was storing data, but App2 couldn't retrieve it, 
 Fix: Discovered that App1's IDistributedCache was automatically prepending App1_Session_ (from options.InstanceName) to the Redis key. Updated App2/Pages/Index.cshtml.cs to construct the Redis key with this exact prefix (App1_Session_App1_SharedData_{sessionId}) for successful retrieval.
 
 By systematically addressing each of these layers, we've established a fully functional system for sharing session data via Redis between two ASP.NET Core applications embedded in an iframe.
-
-
-
-
-
-
-
