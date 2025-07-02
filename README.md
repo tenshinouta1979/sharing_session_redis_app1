@@ -16,7 +16,7 @@ Security: App1 specifies App2's exact origin (https://localhost:B) as the target
 
 App2's Role: App2's Index.cshtml (the frontend) has a window.addEventListener('message', ...) that listens for incoming messages.
 
-Security: Crucially, App2 verifies the event.origin of the incoming message against a list of allowedOrigins (which includes https://localhost:7038 for App1 and https://*.scf.usercontent.goog for the Canvas environment). This prevents App2 from processing messages from untrusted sources.
+Security: Crucially, App2 verifies the event.origin of the incoming message against a list of allowedOrigins (which includes https://localhost:A for App1 and https://*.scf.usercontent.goog for the Canvas environment). This prevents App2 from processing messages from untrusted sources.
 
 If the origin is trusted and the message type is SESSION_ID, App2 extracts the session ID.
 
@@ -86,11 +86,11 @@ Problem: App1 couldn't embed App2, or postMessage was failing due to cross-origi
 
 Fixes:
 
-Configured CORS policy in App2/Program.cs (AllowSpecificOrigin) to explicitly allow App1's origin (https://localhost:7038) and dynamic Canvas origins (https://*.scf.usercontent.goog).
+Configured CORS policy in App2/Program.cs (AllowSpecificOrigin) to explicitly allow App1's origin (https://localhost:A) and dynamic Canvas origins (https://*.scf.usercontent.goog).
 
-Ensured iframe src in App1/Pages/Index.cshtml correctly pointed to App2's HTTPS port (https://localhost:7053).
+Ensured iframe src in App1/Pages/Index.cshtml correctly pointed to App2's HTTPS port (https://localhost:B).
 
-Ensured postMessage target origin in App1/Pages/Index.cshtml correctly specified App2's HTTPS port (https://localhost:7053).
+Ensured postMessage target origin in App1/Pages/Index.cshtml correctly specified App2's HTTPS port (https://localhost:B).
 
 HTTPS Enforcement and Port Mismatches:
 
