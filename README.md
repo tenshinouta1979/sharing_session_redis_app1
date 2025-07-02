@@ -110,7 +110,7 @@ Problem: App1 couldn't connect to Redis or the connection was immediately droppe
 
 Fixes:
 
-Identified the WSL IP address (172.18.188.83) and updated ConnectionStrings:RedisConnection in both App1/appsettings.json and App2/appsettings.json to use this IP.
+Identified the WSL IP address (xxx.xxx.xxx.xxx) and updated ConnectionStrings:RedisConnection in both App1/appsettings.json and App2/appsettings.json to use this IP.
 
 Modified redis.conf in WSL:
 
