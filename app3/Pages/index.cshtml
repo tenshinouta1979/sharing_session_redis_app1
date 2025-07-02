@@ -1,0 +1,199 @@
+@page
+@model App1.Pages.IndexModel
+@{
+    ViewData["Title"] = "App1 - Main Application";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+        button {
+            background-color: #3b82f6;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #2563eb;
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        iframe {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background-color: #f9fafb;
+        }
+        .message-box {
+            background-color: #e0f2fe;
+            color: #0c4a6e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 15px;
+            font-weight: 500;
+            /* display: none; */ /* Initially visible to show the message */
+        }
+        .message-box.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4 text-center">App1 - Main Application (Parent)</h1>
+
+        <div class="message-box @(string.IsNullOrEmpty(Model.Message) ? "hidden" : "") @(Model.Message.Contains("failed") ? "error" : "")" id="statusMessage">
+            @Model.Message
+        </div>
+
+        <form method="post" id="loginForm" class="mb-6">
+            @Html.AntiForgeryToken() @* Anti-forgery token for security *@
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="Username" value="testuser" required class="rounded-lg">
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="Password" value="password123" required class="rounded-lg">
+            </div>
+            <button type="submit" class="rounded-lg">Log In and Load App2</button>
+        </form>
+
+        <h2 class="text-xl font-semibold text-gray-700 mb-3 text-center">App2 (Embedded in iframe)</h2>
+        <iframe id="app2Iframe" src="https://localhost:7053/" title="App2 Embedded" class="rounded-lg"></iframe> @* UPDATED: App2's correct HTTPS port *@
+
+        <script>
+            // The session ID is now directly rendered by the .NET 8 backend
+            const serverRenderedSessionId = "@Model.CurrentSessionId";
+
+            // Get references to elements
+            const loginForm = document.getElementById('loginForm');
+            const app2Iframe = document.getElementById('app2Iframe');
+            const statusMessage = document.getElementById('statusMessage');
+
+            // Function to display messages (client-side updates, if any)
+            function displayMessage(message, type = 'info') {
+                statusMessage.textContent = message;
+                statusMessage.classList.remove('hidden', 'error');
+                if (type === 'error') {
+                    statusMessage.classList.add('error');
+                }
+            }
+
+            // This event listener will fire after the form is submitted and the page reloads
+            // or on initial page load if a session already exists.
+            window.onload = () => {
+                // If a session ID is available from the server, attempt to send it to App2
+                if (serverRenderedSessionId && serverRenderedSessionId !== "") {
+                    // Ensure the iframe is fully loaded before sending the message
+                    // This onload event is reliable for cross-origin iframes.
+                    app2Iframe.onload = () => {
+                        // Use postMessage for secure cross-origin communication
+                        // IMPORTANT: Updated to App2's correct HTTPS port (https://localhost:7053)
+                        // In production, NEVER use '*' as the targetOrigin.
+                        app2Iframe.contentWindow.postMessage(
+                            { type: 'SESSION_ID', sessionId: serverRenderedSessionId },
+                            'https://localhost:7053' // App2's actual HTTPS origin
+                        );
+                        console.log('Session ID sent to App2 via postMessage:', serverRenderedSessionId);
+                        displayMessage('Session ID sent to App2 via postMessage.', 'info');
+                    };
+
+                    // If the iframe is already loaded (e.g., page reloaded after login),
+                    // the `onload` event will handle the initial load and subsequent reloads.
+                } else {
+                    console.log('No session ID available from server yet.');
+                }
+            };
+
+            // Optional: Listen for messages from the iframe (App2)
+            window.addEventListener('message', function(event) {
+                // IMPORTANT: Always verify the origin of the message in a real application
+                // This must match App2's actual origin
+                // Updated to App2's correct HTTPS port (https://localhost:7053)
+                if (event.origin !== 'https://localhost:7053') {
+                    console.warn('App1: Message received from untrusted origin:', event.origin);
+                    return;
+                }
+
+                if (event.data && event.data.type === 'APP2_READY') {
+                    console.log('App1: App2 reported it is ready to receive messages.');
+                    // If you want to resend the session ID after App2 signals readiness, you can do it here.
+                    // This can be useful for ensuring App2 is fully initialized.
+                    if (serverRenderedSessionId && serverRenderedSessionId !== "") {
+                         app2Iframe.contentWindow.postMessage(
+                            { type: 'SESSION_ID', sessionId: serverRenderedSessionId },
+                            'https://localhost:7053' // App2's correct HTTPS port
+                        );
+                        console.log('App1: Resent session ID after App2 readiness signal.');
+                    }
+                }
+            });
+        </script>
+    </div>
+</body>
+</html>
